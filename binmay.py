@@ -87,6 +87,9 @@ def choose_period() -> dict:
     while True:
         os.system('cls')
         try:
+            print('Available Semester Periods')
+            print()
+
             count = 0
             for period in periods:
                 count += 1

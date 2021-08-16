@@ -1,9 +1,12 @@
+import const
 import os
 import binmay
 from colorama import Fore
 
 if __name__ == '__main__':
     os.system('cls')
+
+    const.load_config()
 
     print(f'{Fore.GREEN}Logging in to BINUSMaya...{Fore.RESET}')
     binmay.login()
