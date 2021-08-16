@@ -21,26 +21,27 @@ def main():
 
     print(Fore.RESET)
 
-    period = binmay.choose_period()
-    score = binmay.view_score(period)
+    while True:
+        period = binmay.choose_period()
+        score = binmay.view_score(period)
 
-    header_format = '| %-3s | %-40s | %-5s | %-5s |'
-    row_format = '| %3d | %-40s | %5s | %-5s |'
+        header_format = '| %-3s | %-40s | %-5s | %-5s |'
+        row_format = '| %3d | %-40s | %5s | %-5s |'
 
-    print('+-----+------------------------------------------+-------+-------+')
-    print(header_format % ('No', 'Course Name', 'Score', 'Grade'))
-    print('+-----+------------------------------------------+-------+-------+')
+        print('+-----+------------------------------------------+-------+-------+')
+        print(header_format % ('No', 'Course Name', 'Score', 'Grade'))
+        print('+-----+------------------------------------------+-------+-------+')
 
-    count = 0
-    for tmp in score[0]:
-        count += 1
-        print(row_format % (count, tmp['course'], str(tmp['final-score']), tmp['grade']))
+        count = 0
+        for tmp in score[0]:
+            count += 1
+            print(row_format % (count, tmp['course'], str(tmp['final-score']), tmp['grade']))
 
-    print('+-----+------------------------------------------+-------+-------+')
-    print('| %-3s | %-56s |' % ('GPA', str(score[1])))
-    print('+-----+----------------------------------------------------------+')
+        print('+-----+------------------------------------------+-------+-------+')
+        print('| %-3s | %-56s |' % ('GPA', str(score[1])))
+        print('+-----+----------------------------------------------------------+')
 
-    os.system('pause')
+        os.system('pause')
 
 if __name__ == '__main__':
     main()

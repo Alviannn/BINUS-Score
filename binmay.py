@@ -278,9 +278,9 @@ def __calculate_gpa(graded_scores: List[dict], grading_list: List[dict]) -> Unio
         total_scu += scu
 
     gpa: float = gp_sum / total_scu
-    formatted_gpa = float(format(gpa, '.2f'))
+    last_point = int(format(gpa, '.3f')[-1])
 
-    if gpa > formatted_gpa:
-        formatted_gpa += 0.01
+    if last_point == 5:
+        gpa += 0.001
 
-    return formatted_gpa
+    return float(format(gpa, '.2f'))
