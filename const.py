@@ -1,7 +1,7 @@
 import json
 import os
 import html5lib
-import getpass
+import stdiomask
 
 from colorama import Fore
 
@@ -37,7 +37,7 @@ def load_config():
         print()
 
         config['username'] = input('Your BINUS username (without \'@binus.ac.id\'): ')
-        config['password'] = getpass.getpass('Your BINUS password: ')
+        config['password'] = stdiomask.getpass('Your BINUS password: ')
 
         with open('config.json', 'w') as file:
             file.write(json.dumps(config, indent=4))
