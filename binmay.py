@@ -115,7 +115,7 @@ def view_score(period: dict) -> Tuple[List[dict], Union[float, str]]:
     Grabs the scores from BINUSMaya then calculate and grade them.
 
     Args:
-        period (dict): The period object
+        period: The period object
 
     Returns:
         The calculated and graded scores from BINUSMaya along with the GPA
@@ -151,13 +151,13 @@ def view_score(period: dict) -> Tuple[List[dict], Union[float, str]]:
         if course not in score_map:
             score_map[course] = score_obj
 
-        # score can be invalid, so just set it to that
+        # score can be invalid (N/A), so just set it to that
         # since we're going to skip it later on
         if isinstance(score, str):
             score_map[course]['score'] = score
 
         # skip course with invalid score
-        # since we can't calculate the full score one invalid score
+        # since we can't calculate the full score if we have at least one invalid score
         # therefore, we're just going to keep skipping it
         if score_map[course]['score'] == 'N/A':
             continue
