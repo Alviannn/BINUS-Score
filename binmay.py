@@ -49,7 +49,7 @@ def login():
         mapped_csrf = re.findall(
             r'name="([^"]+)" .* value="([^"]+)"', soup.prettify())
     except:
-        raise Exception(ErrorCodes.SCRAPE_FAIL)
+        raise LoginError(LoginError.SCRAPE_FAIL)
 
     # ask for username and password to BINUSMaya
     username = input('Your BINUS username (without \'@binus.ac.id\'): ')
@@ -68,9 +68,9 @@ def login():
 
     with client.post(f'{BINMAY_URL}/login/sys_login.php', data=payload) as res:
         if 'login/?error' in res.url:
-            raise Exception(ErrorCodes.INCORRECT_VALUES)
+            raise LoginError(LoginError.INCORRECT_CREDENTIALS)
         elif 'newStudent' not in res.url:
-            raise Exception(ErrorCodes.UNKNOWN)
+            raise LoginError(LoginError.UNKNOWN)
 
     with client.get(f'{BINMAY_URL}/newStudent/') as res:
         pass
