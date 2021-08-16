@@ -1,4 +1,3 @@
-import const
 import os
 import binmay
 
@@ -7,14 +6,13 @@ from time import sleep
 
 def main():
     os.system('cls')
-    const.load_config()
 
     print(f'{Fore.LIGHTGREEN_EX}Logging in to BINUSMaya...{Fore.RESET}')
     try:
         binmay.login()
         print(f'{Fore.LIGHTGREEN_EX}Successfully logged in to BINUSMaya!')
         sleep(2)
-    except:
+    except Exception:
         print(f'{Fore.LIGHTRED_EX}Failed to login to BINUSMaya!')
         os.system('pause')
         return

@@ -1,13 +1,13 @@
-import const
 import json
 import math
 import os
 import re
 import requests
+import stdiomask
 
-from typing import List, Tuple, Union
+from const import *
 from bs4 import BeautifulSoup
-
+from typing import List, Tuple, Union
 
 # ----------------------------- #
 
@@ -29,42 +29,50 @@ def login():
     Raises:
         Exception: Thrown if program failed to login to BINUSMaya
     """
-    with client.get(f'{const.BINMAY_URL}/login/') as res:
-        soup = BeautifulSoup(res.text, const.HTML_PARSER)
 
-    inputs = soup.find_all('input')
+    try:
+        with client.get(f'{BINMAY_URL}/login/') as res:
+            soup = BeautifulSoup(res.text, HTML_PARSER)
+            inputs = soup.find_all('input')
 
-    # extracting keys (for the form data)
-    user_key = inputs[0]['name']
-    pwd_key = inputs[1]['name']
-    submit_key = inputs[2]['name']
+        # extracting keys (for the form data)
+        user_key: str = inputs[0]['name']
+        pwd_key: str = inputs[1]['name']
+        submit_key: str = inputs[2]['name']
+    except:
+        raise Exception(ErrorCodes.SCRAPE_FAIL)
 
     csrf_url: str = soup.find_all('script')[4]['src']
-    csrf_url = f'{const.BINMAY_URL}{csrf_url[2:len(csrf_url)]}'
+    csrf_url = f'{BINMAY_URL}{csrf_url[2:len(csrf_url)]}'
 
     with client.get(csrf_url) as res:
-        soup = BeautifulSoup(res.text, const.HTML_PARSER)
+        soup = BeautifulSoup(res.text, HTML_PARSER)
 
     mapped_csrf = re.findall(
         r'name="([^"]+)" .* value="([^"]+)"', soup.prettify())
 
-    extra_payload = {}
-    for obj in mapped_csrf:
-        extra_payload[obj[0]] = obj[1]
+    # ask for username and password to BINUSMaya
+    username = input('Your BINUS username (without \'@binus.ac.id\'): ')
+    password = stdiomask.getpass('Your BINUS password: ')
 
+    # make the payload / formdata
     payload = {
-        user_key: const.USERNAME,
-        pwd_key: const.PASSWORD,
+        user_key: username,
+        pwd_key: password,
         submit_key: 'Login'
     }
 
-    payload.update(extra_payload)
+    # add extra key-values from the CSRF url
+    for obj in mapped_csrf:
+        payload[obj[0]] = obj[1]
 
-    with client.post(f'{const.BINMAY_URL}/login/sys_login.php', data=payload) as res:
-        if not res.url.endswith('/newStudent/'):
-            raise Exception('Failed to login to BINUSMaya!')
+    with client.post(f'{BINMAY_URL}/login/sys_login.php', data=payload) as res:
+        if 'login/?error' in res.url:
+            raise Exception(ErrorCodes.INCORRECT_VALUES)
+        elif 'newStudent' not in res.url:
+            raise Exception(ErrorCodes.UNKNOWN)
 
-    with client.get(f'{const.BINMAY_URL}/newStudent/') as res:
+    with client.get(f'{BINMAY_URL}/newStudent/') as res:
         pass
 
 
@@ -76,7 +84,7 @@ def choose_period() -> dict:
     Returns:
         The selected period object.
     """
-    period_list_url = f'{const.BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getPeriodByBinusianId'
+    period_list_url = f'{BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getPeriodByBinusianId'
 
     with client.post(period_list_url, headers=header, data=json.dumps({})) as res:
         periods: dict = res.json()
@@ -114,7 +122,7 @@ def view_score(period: dict) -> Tuple[List[dict], Union[float, str]]:
         The calculated and graded scores from BINUSMaya along with the GPA
     """
     code: str = period['value']
-    score_url = f'{const.BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getStudentScore/{code}'
+    score_url = f'{BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getStudentScore/{code}'
 
     with client.get(score_url, headers=header) as res:
         period_res = res.json()
@@ -269,7 +277,8 @@ def __calculate_gpa(graded_scores: List[dict], grading_list: List[dict]) -> Unio
         if score_obj['final-score'] == 'N/A':
             return 'N/A'
 
-        grade_obj = list(filter(lambda g: g['grade'] == score_obj['grade'], grading_list))[0]
+        grade_obj = list(
+            filter(lambda g: g['grade'] == score_obj['grade'], grading_list))[0]
 
         gp = grade_obj['value']
         scu = score_obj['scu']
