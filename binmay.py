@@ -251,6 +251,16 @@ def __convert_grading_system(raw_grading: List[dict]) -> List[dict]:
 
 
 def __calculate_gpa(graded_scores: List[dict], grading_list: List[dict]) -> Union[float, str]:
+    """
+    Calculates the GPA based on your grades.
+
+    Args:
+        graded_scores: The finalized and graded scores
+        grading_list: The (better version) grading system
+
+    Returns:
+        The calculated GPA, could be `str` if there are any invalid score (N/A), otherwise `float`
+    """
     gp_sum = 0
     total_scu = 0
 
