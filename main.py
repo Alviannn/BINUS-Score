@@ -13,6 +13,7 @@ def main():
     try:
         binmay.login()
         print(f'{Fore.LIGHTGREEN_EX}Successfully logged in to BINUSMaya!')
+        print(Fore.RESET)
         sleep(2)
     except LoginError as ex:
         if ex.code == LoginError.SCRAPE_FAIL:
@@ -29,10 +30,9 @@ def main():
                 f'{Fore.LIGHTRED_EX}An unknown error has occurred that causes the program to fail to login!'
                 'Please contact the developer!')
 
+        print(Fore.RESET)
         os.system('pause')
         return
-
-    print(Fore.RESET)
 
     while True:
         period = binmay.choose_period()
