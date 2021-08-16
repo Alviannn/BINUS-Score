@@ -1,8 +1,10 @@
 import const
 import json
+import math
 import os
 import re
 import requests
+
 from typing import List, Union
 from bs4 import BeautifulSoup
 
@@ -120,6 +122,9 @@ def view_score(period: dict):
     score_list = period_res['score']
     grading_list = __convert_grading_system(period_res['grading_list'])
 
+    with open('better-grading.json', 'w') as file:
+        file.write(json.dumps(grading_list, indent=4))
+
     for score_data in score_list:
         course: str = score_data['course']
         score = score_data['score']
@@ -128,16 +133,31 @@ def view_score(period: dict):
         weight = weight[:len(weight) - 1]
         weight = float(weight)
 
-        if score == 'N/A':
-            score_map[course] = 'N/A'
-        if course not in score_map:
-            score_map[course] = 0
+        scu: int = score_data['scu']
 
-        if score_map[course] == 'N/A':
+        # default object value
+        score_obj = {
+            'scu': scu,
+            'score': 0
+        }
+
+        if course not in score_map:
+            score_map[course] = score_obj
+
+        # score can be invalid, so just set it to that
+        # since we're going to skip it later on
+        if isinstance(score, str):
+            score_map[course]['score'] = score
+
+        # skip course with invalid score
+        # since we can't calculate the full score one invalid score
+        # therefore, we're just going to keep skipping it
+        if score_map[course]['score'] == 'N/A':
             continue
 
+        # updates the calculated score
         final_score = (score * weight) / 100
-        score_map[course] += final_score
+        score_map[course]['score'] += final_score
 
     return __finalize_score(grading_list, score_map)
 
@@ -145,22 +165,21 @@ def view_score(period: dict):
 # ----------------------------- #
 
 
-def __decide_grade(score: Union[str, float], grading_list: List[dict]):
+def __decide_grade(score: Union[str, int], grading_list: List[dict]):
     """
     Decides based on the score which grade it should be in.
     The grading decision is made by using the `grading_list`.
 
     Args:
-        score: The final calculated score
+        score: The final calculated score (could be N/A)
         grading_list: The grading system which was already been converted to the better version
 
     Returns:
         str: The decided grade for the provided score (could return 'N/A' if the score is invalid)
     """
-    if not isinstance(score, float):
+    if isinstance(score, str):
         return 'N/A'
 
-    score = int(score)
     for grading in grading_list:
         score_range = grading['range']
 
@@ -181,11 +200,14 @@ def __finalize_score(grading_list: List[dict], score_map: dict):
     """
     graded_scores: List[dict] = []
 
-    for [course, score] in score_map.items():
+    for [course, obj] in score_map.items():
+        score = obj['score']
+        final_score = math.ceil(score) if isinstance(score, float) else 'N/A'
+
         res = {
             'course': course,
-            'final-score': format(score, '.2f') if isinstance(score, float) else score,
-            'grade': __decide_grade(score, grading_list)
+            'final-score': final_score,
+            'grade': __decide_grade(final_score, grading_list)
         }
 
         graded_scores.append(res)
@@ -193,7 +215,7 @@ def __finalize_score(grading_list: List[dict], score_map: dict):
     return graded_scores
 
 
-def __convert_grading_system(grading: List[dict]):
+def __convert_grading_system(raw_grading: List[dict]):
     """
     Converts the grading system (or the object) from BINUS to a better version.
 
@@ -201,22 +223,23 @@ def __convert_grading_system(grading: List[dict]):
     so I thought, why not change it?
 
     Args:
-        grading: the source grading system
+        raw_grading: the source grading system
 
     Returns:
         List[dict]: The better version of the grading system.
     """
     better_grading: List[dict] = []
 
-    for grade_obj in grading:
-        raw_range_score = str(grade_obj['range']).split(' - ')
+    for grade_obj in raw_grading:
+        raw_range = str(grade_obj['range']).split(' - ')
 
-        min_range = int(raw_range_score[0])
-        max_range = int(raw_range_score[1])
+        min_range = int(raw_range[0])
+        max_range = int(raw_range[1])
 
         better_grading.append({
             'grade': grade_obj['grade'],
-            'range': (min_range, max_range)
+            'range': (min_range, max_range),
+            'value': grade_obj['descr']
         })
 
     return better_grading
