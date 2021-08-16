@@ -29,7 +29,6 @@ def login():
     Raises:
         Exception: Thrown if program failed to login to BINUSMaya
     """
-
     try:
         with client.get(f'{BINMAY_URL}/login/') as res:
             soup = BeautifulSoup(res.text, HTML_PARSER)
