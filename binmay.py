@@ -63,8 +63,6 @@ def login():
     with client.post(f'{const.BINMAY_URL}/login/sys_login.php', data=payload) as res:
         if not res.url.endswith('/newStudent/'):
             raise Exception('Failed to login to BINUSMaya!')
-        else:
-            print('Successfully logged in!')
 
     with client.get(f'{const.BINMAY_URL}/newStudent/') as res:
         pass

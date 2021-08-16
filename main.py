@@ -1,15 +1,25 @@
+from time import sleep
 import const
 import os
 import binmay
+
 from colorama import Fore
 
-if __name__ == '__main__':
+def main():
     os.system('cls')
-
     const.load_config()
 
-    print(f'{Fore.GREEN}Logging in to BINUSMaya...{Fore.RESET}')
-    binmay.login()
+    print(f'{Fore.LIGHTGREEN_EX}Logging in to BINUSMaya...{Fore.RESET}')
+    try:
+        binmay.login()
+        print(f'{Fore.LIGHTGREEN_EX}Successfully logged in to BINUSMaya!')
+        sleep(2)
+    except:
+        print(f'{Fore.LIGHTRED_EX}Failed to login to BINUSMaya!')
+        os.system('pause')
+        return
+
+    print(Fore.RESET)
 
     period = binmay.choose_period()
     score = binmay.view_score(period)
@@ -29,3 +39,7 @@ if __name__ == '__main__':
     print('+-----+------------------------------------------+-------+-------+')
     print('| %-3s | %-56s |' % ('GPA', str(score[1])))
     print('+-----+----------------------------------------------------------+')
+
+
+if __name__ == '__main__':
+    main()
