@@ -7,3 +7,9 @@ Before you can run this script you need to install the libraries used in this sc
 ```
 pip install -r requirements.txt
 ```
+
+### Usage
+To run the script, all you need to do is just run this command:
+```
+python main.py
+```
