@@ -5,7 +5,7 @@ import os
 import re
 import requests
 
-from typing import List, Union
+from typing import List, Tuple, Union
 from bs4 import BeautifulSoup
 
 
@@ -70,13 +70,13 @@ def login():
         pass
 
 
-def choose_period():
+def choose_period() -> dict:
     """
     Prompts the user to choose which semester period they want to see their scores.
     NOTE: This function uses some Windows commands such as `cls` and `pause`.
 
     Returns:
-        dict: The selected period object.
+        The selected period object.
     """
     period_list_url = f'{const.BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getPeriodByBinusianId'
 
@@ -102,7 +102,7 @@ def choose_period():
             os.system('pause')
 
 
-def view_score(period: dict):
+def view_score(period: dict) -> Tuple[List[dict], Union[float, str]]:
     """
     Grabs the scores from BINUSMaya then calculate and grade them.
 
@@ -110,7 +110,7 @@ def view_score(period: dict):
         period (dict): The period object
 
     Returns:
-        List[dict]: The calculated and graded scores from BINUSMaya
+        The calculated and graded scores from BINUSMaya along with the GPA
     """
     code: str = period['value']
     score_url = f'{const.BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getStudentScore/{code}'
@@ -120,10 +120,9 @@ def view_score(period: dict):
 
     score_map = {}
     score_list = period_res['score']
+    # converts the original grading list into a better version
+    # it's just a better parsed one
     grading_list = __convert_grading_system(period_res['grading_list'])
-
-    with open('better-grading.json', 'w') as file:
-        file.write(json.dumps(grading_list, indent=4))
 
     for score_data in score_list:
         course: str = score_data['course']
@@ -159,13 +158,16 @@ def view_score(period: dict):
         final_score = (score * weight) / 100
         score_map[course]['score'] += final_score
 
-    return __finalize_score(grading_list, score_map)
+    finalized = __finalize_score(grading_list, score_map)
+    gpa = __calculate_gpa(finalized, grading_list)
+
+    return (finalized, gpa)
 
 
 # ----------------------------- #
 
 
-def __decide_grade(score: Union[str, int], grading_list: List[dict]):
+def __decide_grade(score: Union[str, int], grading_list: List[dict]) -> str:
     """
     Decides based on the score which grade it should be in.
     The grading decision is made by using the `grading_list`.
@@ -175,7 +177,7 @@ def __decide_grade(score: Union[str, int], grading_list: List[dict]):
         grading_list: The grading system which was already been converted to the better version
 
     Returns:
-        str: The decided grade for the provided score (could return 'N/A' if the score is invalid)
+        The decided grade for the provided score (could return 'N/A' if the score is invalid)
     """
     if isinstance(score, str):
         return 'N/A'
@@ -187,7 +189,7 @@ def __decide_grade(score: Union[str, int], grading_list: List[dict]):
             return grading['grade']
 
 
-def __finalize_score(grading_list: List[dict], score_map: dict):
+def __finalize_score(grading_list: List[dict], score_map: dict) -> List[dict]:
     """
     Creates the final score with grades to each courses.
 
@@ -196,7 +198,7 @@ def __finalize_score(grading_list: List[dict], score_map: dict):
         score_map: The original score map (generated from the `view_score` function)
 
     Returns:
-        List[dict]: The finalized scores and grades
+        The finalized scores and grades
     """
     graded_scores: List[dict] = []
 
@@ -207,7 +209,8 @@ def __finalize_score(grading_list: List[dict], score_map: dict):
         res = {
             'course': course,
             'final-score': final_score,
-            'grade': __decide_grade(final_score, grading_list)
+            'grade': __decide_grade(final_score, grading_list),
+            'scu': obj['scu']
         }
 
         graded_scores.append(res)
@@ -215,18 +218,20 @@ def __finalize_score(grading_list: List[dict], score_map: dict):
     return graded_scores
 
 
-def __convert_grading_system(raw_grading: List[dict]):
+def __convert_grading_system(raw_grading: List[dict]) -> List[dict]:
     """
-    Converts the grading system (or the object) from BINUS to a better version.
+    Converts the original grading system (or the object) from BINUS to a better version.
 
     I need a way to use the grading system easily. Since the original one uses a complete string
     so I thought, why not change it?
+
+    Basically, this just converts the score range value from string to integer and changed the 'descr' key to 'value'
 
     Args:
         raw_grading: the source grading system
 
     Returns:
-        List[dict]: The better version of the grading system.
+        The better version of the grading system.
     """
     better_grading: List[dict] = []
 
@@ -243,3 +248,28 @@ def __convert_grading_system(raw_grading: List[dict]):
         })
 
     return better_grading
+
+
+def __calculate_gpa(graded_scores: List[dict], grading_list: List[dict]) -> Union[float, str]:
+    gp_sum = 0
+    total_scu = 0
+
+    for score_obj in graded_scores:
+        if score_obj['final-score'] == 'N/A':
+            return 'N/A'
+
+        grade_obj = list(filter(lambda g: g['grade'] == score_obj['grade'], grading_list))[0]
+
+        gp = grade_obj['value']
+        scu = score_obj['scu']
+
+        gp_sum += (gp * scu)
+        total_scu += scu
+
+    gpa: float = gp_sum / total_scu
+    formatted_gpa = float(format(gpa, '.2f'))
+
+    if gpa > formatted_gpa:
+        formatted_gpa += 0.01
+
+    return formatted_gpa
