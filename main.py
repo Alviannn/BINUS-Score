@@ -1,9 +1,9 @@
-from time import sleep
 import const
 import os
 import binmay
 
 from colorama import Fore
+from time import sleep
 
 def main():
     os.system('cls')
