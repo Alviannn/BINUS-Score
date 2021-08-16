@@ -39,17 +39,17 @@ def login():
         user_key: str = inputs[0]['name']
         pwd_key: str = inputs[1]['name']
         submit_key: str = inputs[2]['name']
+
+        csrf_url: str = soup.find_all('script')[4]['src']
+        csrf_url = f'{BINMAY_URL}{csrf_url[2:len(csrf_url)]}'
+
+        with client.get(csrf_url) as res:
+            soup = BeautifulSoup(res.text, HTML_PARSER)
+
+        mapped_csrf = re.findall(
+            r'name="([^"]+)" .* value="([^"]+)"', soup.prettify())
     except:
         raise Exception(ErrorCodes.SCRAPE_FAIL)
-
-    csrf_url: str = soup.find_all('script')[4]['src']
-    csrf_url = f'{BINMAY_URL}{csrf_url[2:len(csrf_url)]}'
-
-    with client.get(csrf_url) as res:
-        soup = BeautifulSoup(res.text, HTML_PARSER)
-
-    mapped_csrf = re.findall(
-        r'name="([^"]+)" .* value="([^"]+)"', soup.prettify())
 
     # ask for username and password to BINUSMaya
     username = input('Your BINUS username (without \'@binus.ac.id\'): ')
