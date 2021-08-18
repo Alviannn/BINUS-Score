@@ -72,6 +72,19 @@ def login():
             raise LoginError(LoginError.UNKNOWN)
 
 
+def check_session() -> bool:
+    """
+    Checks if the program still have a login session in BINUSMaya
+
+    Returns:
+        `True` if the session is still valid, `False` is otherwise
+    """
+    with client.get(f'{BINMAY_URL}/services/ci/index.php/staff/init/check_session') as res:
+        result = res.json()
+
+    return 'SessionStatus' in result
+
+
 def choose_period() -> dict:
     """
     Prompts the user to choose which semester period they want to see their scores.
