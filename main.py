@@ -4,6 +4,7 @@ import binmay
 from const import LoginError
 from colorama import Fore
 from time import sleep
+from ascii_table import *
 
 
 def main():
@@ -44,20 +45,20 @@ def main():
         period = binmay.choose_period()
         score = binmay.view_score(period)
 
-        header_format = '| %-3s | %-40s | %-5s | %-5s |'
-        row_format = '| %3d | %-40s | %5s | %-5s |'
-
-        print('+-----+------------------------------------------+-------+-------+')
-        print(header_format % ('No', 'Course Name', 'Score', 'Grade'))
-        print('+-----+------------------------------------------+-------+-------+')
+        table = Table([
+            TableColHeader('No', 3, True),
+            TableColHeader('Course Name', 40),
+            TableColHeader('Score', 5, True),
+            TableColHeader('Grade', 5)
+        ])
 
         count = 0
         for tmp in score[0]:
             count += 1
-            print(row_format % (count, tmp['course'], str(
-                tmp['final-score']), tmp['grade']))
+            table.add_row([str(count), tmp['course'], str(tmp['final-score']), str(tmp['grade'])])
 
-        print('+-----+------------------------------------------+-------+-------+')
+        table.print_table()
+
         print('| %-3s | %-56s |' % ('GPA', str(score[1])))
         print('+-----+----------------------------------------------------------+')
 
