@@ -53,13 +53,13 @@ def main():
         ])
 
         count = 0
-        for tmp in score[0]:
+        for tmp in score['score_list']:
             count += 1
             table.add_row([str(count), tmp['course'], str(tmp['final-score']), str(tmp['grade'])])
 
         table.print_table()
 
-        print('| %-3s | %-56s |' % ('GPA', str(score[1])))
+        print('| %-3s | %-56s |' % ('GPA', str(score['gpa'])))
         print('+-----+----------------------------------------------------------+')
 
         os.system('pause')

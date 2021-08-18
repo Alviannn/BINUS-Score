@@ -7,7 +7,7 @@ import stdiomask
 
 from const import *
 from bs4 import BeautifulSoup
-from typing import List, Tuple, Union
+from typing import List, Union
 
 # ----------------------------- #
 
@@ -110,7 +110,7 @@ def choose_period() -> dict:
             os.system('pause')
 
 
-def view_score(period: dict) -> Tuple[List[dict], Union[float, str]]:
+def view_score(period: dict):
     """
     Grabs the scores from BINUSMaya then calculate and grade them.
 
@@ -169,7 +169,7 @@ def view_score(period: dict) -> Tuple[List[dict], Union[float, str]]:
     finalized = __finalize_score(grading_list, score_map)
     gpa = __calculate_gpa(finalized, grading_list)
 
-    return (finalized, gpa)
+    return { 'score_list': finalized, 'gpa': gpa }
 
 
 # ----------------------------- #
