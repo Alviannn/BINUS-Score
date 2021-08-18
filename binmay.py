@@ -71,9 +71,6 @@ def login():
         elif 'newStudent' not in res.url:
             raise LoginError(LoginError.UNKNOWN)
 
-    with client.get(f'{BINMAY_URL}/newStudent/') as res:
-        pass
-
 
 def choose_period() -> dict:
     """

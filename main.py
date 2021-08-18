@@ -1,12 +1,46 @@
-import json
-import os
 import binmay
+import os
 
+from ascii_table import *
 from const import LoginError
 from colorama import Fore
 from time import sleep
-from ascii_table import *
+from typing import Any, Dict, Union
 
+
+def print_calculated_scores(score_list: List[dict], gpa: Union[float, str]):
+    table = Table([
+        TableColHeader('No', 3, True),
+        TableColHeader('Course Name', 40),
+        TableColHeader('Score', 5, True),
+        TableColHeader('Grade', 5)
+    ])
+
+    count = 0
+    for tmp in score_list:
+        count += 1
+        table.add_row([str(count), tmp['course'], str(tmp['final_score']), str(tmp['grade'])])
+
+    table.print_table()
+
+    print('| %-3s | %-56s |' % ('GPA', str(gpa)))
+    print('+-----+----------------------------------------------------------+')
+
+
+def print_score_map(score_map: Dict[str, Any]):
+    count = 0
+    for [course_name, course_obj] in score_map.items():
+        count += 1
+
+        print(f'{count}. {course_name} ({course_obj["scu"]} SCU):')
+        for [key, data] in course_obj.items():
+            if key == 'scu':
+                continue
+
+            key = ' - '.join(key.split(': '))
+            print(f'    * {key}: {data["score"]} ({data["weight"]}%)')
+
+        print()
 
 def main():
     while True:
@@ -46,23 +80,8 @@ def main():
         period = binmay.choose_period()
         score = binmay.view_score(period)
 
-        table = Table([
-            TableColHeader('No', 3, True),
-            TableColHeader('Course Name', 40),
-            TableColHeader('Score', 5, True),
-            TableColHeader('Grade', 5)
-        ])
-
-        count = 0
-        for tmp in score['score_list']:
-            count += 1
-            table.add_row([str(count), tmp['course'], str(tmp['final_score']), str(tmp['grade'])])
-
-        print(json.dumps(score['score_map'], indent=4))
-        table.print_table()
-
-        print('| %-3s | %-56s |' % ('GPA', str(score['gpa'])))
-        print('+-----+----------------------------------------------------------+')
+        print_score_map(score['score_map'])
+        print_calculated_scores(score['score_list'], score['gpa'])
 
         os.system('pause')
 
