@@ -126,50 +126,56 @@ def view_score(period: dict):
     with client.get(score_url, headers=header) as res:
         period_res = res.json()
 
-    score_map = {}
+    calculated_scores = {}
+    full_score_map = {}
+
     score_list = period_res['score']
     # converts the original grading list into a better version
     # it's just a better parsed one
     grading_list = __convert_grading_system(period_res['grading_list'])
 
     for score_data in score_list:
-        course: str = score_data['course']
-        score = score_data['score']
-
-        weight: str = score_data['weight']
-        weight = weight[:len(weight) - 1]
-        weight = float(weight)
-
+        course_name: str = score_data['course']
+        score: Union[int, str] = score_data['score']
+        weight = float(score_data['weight'][:-1])
         scu: int = score_data['scu']
+        lam: str = score_data['lam']
 
-        # default object value
-        score_obj = {
+        # default object for calculated scores
+        calculated_score_obj = {
             'scu': scu,
             'score': 0
         }
 
-        if course not in score_map:
-            score_map[course] = score_obj
+        if course_name not in calculated_scores:
+            calculated_scores[course_name] = calculated_score_obj
+        if course_name not in full_score_map:
+            full_score_map[course_name] = { 'scu': scu }
+
+        full_score_map[course_name][lam] = {
+            'weight': weight,
+            'score': score
+        }
 
         # score can be invalid (N/A), so just set it to that
         # since we're going to skip it later on
         if isinstance(score, str):
-            score_map[course]['score'] = score
+            calculated_scores[course_name]['score'] = score
 
         # skip course with invalid score
         # since we can't calculate the full score if we have at least one invalid score
         # therefore, we're just going to keep skipping it
-        if score_map[course]['score'] == 'N/A':
+        if calculated_scores[course_name]['score'] == 'N/A':
             continue
 
         # updates the calculated score
         final_score = (score * weight) / 100
-        score_map[course]['score'] += final_score
+        calculated_scores[course_name]['score'] += final_score
 
-    finalized = __finalize_score(grading_list, score_map)
+    finalized = __finalize_score(grading_list, calculated_scores)
     gpa = __calculate_gpa(finalized, grading_list)
 
-    return { 'score_list': finalized, 'gpa': gpa }
+    return { 'score_list': finalized, 'gpa': gpa, 'score_map': full_score_map }
 
 
 # ----------------------------- #
@@ -197,26 +203,26 @@ def __decide_grade(score: Union[str, int], grading_list: List[dict]) -> str:
             return grading['grade']
 
 
-def __finalize_score(grading_list: List[dict], score_map: dict) -> List[dict]:
+def __finalize_score(grading_list: List[dict], calculated_score: dict) -> List[dict]:
     """
     Creates the final score with grades to each courses.
 
     Args:
         grading_list: The grading system which was already been converted to the better version
-        score_map: The original score map (generated from the `view_score` function)
+        calculated_score: The calculated final score (generated from `view_score` and it's not actually final)
 
     Returns:
         The finalized scores and grades
     """
     graded_scores: List[dict] = []
 
-    for [course, obj] in score_map.items():
+    for [course, obj] in calculated_score.items():
         score = obj['score']
         final_score = math.ceil(score) if isinstance(score, float) else 'N/A'
 
         res = {
             'course': course,
-            'final-score': final_score,
+            'final_score': final_score,
             'grade': __decide_grade(final_score, grading_list),
             'scu': obj['scu']
         }
@@ -273,7 +279,7 @@ def __calculate_gpa(graded_scores: List[dict], grading_list: List[dict]) -> Unio
     total_scu = 0
 
     for score_obj in graded_scores:
-        if score_obj['final-score'] == 'N/A':
+        if score_obj['final_score'] == 'N/A':
             return 'N/A'
 
         grade_obj = list(

@@ -1,3 +1,4 @@
+import json
 import os
 import binmay
 
@@ -55,8 +56,9 @@ def main():
         count = 0
         for tmp in score['score_list']:
             count += 1
-            table.add_row([str(count), tmp['course'], str(tmp['final-score']), str(tmp['grade'])])
+            table.add_row([str(count), tmp['course'], str(tmp['final_score']), str(tmp['grade'])])
 
+        print(json.dumps(score['score_map'], indent=4))
         table.print_table()
 
         print('| %-3s | %-56s |' % ('GPA', str(score['gpa'])))
