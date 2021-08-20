@@ -2,7 +2,7 @@ import binmay
 import os
 
 from ascii_table import *
-from const import LoginError
+from const import *
 from colorama import Fore
 from time import sleep
 from typing import Any, Dict, Union
@@ -19,7 +19,8 @@ def print_calculated_scores(score_list: List[dict], gpa: Union[float, str]):
     count = 0
     for tmp in score_list:
         count += 1
-        table.add_row([str(count), tmp['course'], str(tmp['final_score']), str(tmp['grade'])])
+        table.add_row([str(count), tmp['course'], str(
+            tmp['final_score']), str(tmp['grade'])])
 
     table.print_table()
 
@@ -42,7 +43,8 @@ def print_score_map(score_map: Dict[str, Any]):
 
         print()
 
-def main():
+
+def handle_login():
     while True:
         os.system('cls')
         print(f'{Fore.LIGHTGREEN_EX}Logging in to BINUSMaya...{Fore.RESET}')
@@ -65,7 +67,7 @@ def main():
                     f'{Fore.LIGHTRED_EX}Incorrect username or password! Please check it again!')
             elif ex.code == LoginError.UNKNOWN:
                 print(
-                    f'{Fore.LIGHTRED_EX}An unknown error has occurred that causes the program to fail to login!'
+                    f'{Fore.LIGHTRED_EX}An unknown error has occurred that causes the program to fail to login! '
                     'Please contact the developer!')
 
             print(Fore.RESET)
@@ -76,14 +78,28 @@ def main():
         # if success then break the loop
         break
 
+
+def handle_view_score():
     while True:
-        period = binmay.choose_period()
-        score = binmay.view_score(period)
+        try:
+            period = binmay.choose_period()
+            score = binmay.view_score(period)
+        except SessionError:
+            print(f'{Fore.LIGHTRED_EX}It seems the program no longer have a session in BINUSMaya! '
+                  f'Please relog immediately!{Fore.RESET}')
+            os.system('pause')
+            return
 
         print_score_map(score['score_map'])
         print_calculated_scores(score['score_list'], score['gpa'])
 
         os.system('pause')
+
+
+def main():
+    while True:
+        handle_login()
+        handle_view_score()
 
 
 if __name__ == '__main__':

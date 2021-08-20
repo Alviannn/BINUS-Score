@@ -72,17 +72,19 @@ def login():
             raise LoginError(LoginError.UNKNOWN)
 
 
-def check_session() -> bool:
+def check_session():
     """
     Checks if the program still have a login session in BINUSMaya
 
-    Returns:
-        `True` if the session is still valid, `False` is otherwise
+    Raises:
+        SessionError: If the program no longer have a session
     """
-    with client.get(f'{BINMAY_URL}/services/ci/index.php/staff/init/check_session') as res:
+    with client.get(f'{BINMAY_URL}/services/ci/index.php/staff/init/check_session', headers=header) as res:
         result = res.json()
 
-    return 'SessionStatus' in result
+    has_session = result['SessionStatus'] != 0
+    if not has_session:
+        raise SessionError()
 
 
 def choose_period() -> dict:
@@ -93,8 +95,9 @@ def choose_period() -> dict:
     Returns:
         The selected period object.
     """
-    period_list_url = f'{BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getPeriodByBinusianId'
+    check_session()
 
+    period_list_url = f'{BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getPeriodByBinusianId'
     with client.post(period_list_url, headers=header, data=json.dumps({})) as res:
         periods: dict = res.json()
 
@@ -130,6 +133,8 @@ def view_score(period: dict):
     Returns:
         The calculated and graded scores from BINUSMaya along with the GPA
     """
+    check_session()
+
     code: str = period['value']
     score_url = f'{BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getStudentScore/{code}'
 
