@@ -1,7 +1,6 @@
+import re
 import json
 import math
-import os
-import re
 import requests
 import stdiomask
 
@@ -87,40 +86,17 @@ def check_session():
         raise SessionError()
 
 
-def choose_period() -> dict:
+def get_all_periods():
     """
-    Prompts the user to choose which semester period they want to see their scores.
-    NOTE: This function uses some Windows commands such as `cls` and `pause`.
-
-    Returns:
-        The selected period object.
+    Gets all semester periods data
     """
     check_session()
 
     period_list_url = f'{BINMAY_URL}/services/ci/index.php/scoring/ViewGrade/getPeriodByBinusianId'
     with client.post(period_list_url, headers=header, data=json.dumps({})) as res:
-        periods: dict = res.json()
+        periods: list[dict] = res.json()
 
-    # forces user to pick the correct period
-    while True:
-        os.system('cls')
-        try:
-            print('Available Semester Periods')
-            print()
-
-            count = 0
-            for period in periods:
-                count += 1
-                print(f'{count}. {period["field"]}')
-
-            print()
-            choice = int(input(f'Choose: '))
-            assert 1 <= choice <= len(periods)
-
-            return periods[choice - 1]
-        except Exception:
-            print('Invalid choice!')
-            os.system('pause')
+    return periods
 
 
 def view_score(period: dict):
@@ -165,7 +141,7 @@ def view_score(period: dict):
         if course_name not in calculated_scores:
             calculated_scores[course_name] = calculated_score_obj
         if course_name not in full_score_map:
-            full_score_map[course_name] = { 'scu': scu }
+            full_score_map[course_name] = {'scu': scu}
 
         full_score_map[course_name][lam] = {
             'weight': weight,
@@ -190,7 +166,31 @@ def view_score(period: dict):
     finalized = __finalize_score(grading_list, calculated_scores)
     gpa = __calculate_gpa(finalized, grading_list)
 
-    return { 'score_list': finalized, 'gpa': gpa, 'score_map': full_score_map }
+    return {'score_list': finalized, 'gpa': gpa, 'score_map': full_score_map}
+
+
+def get_cumulative_gpa(period_list: list[dict]):
+    """
+    Calculates your cumulative GPA
+
+    Args:
+        period_list: list of all period objects
+    """
+    gpa_count = 0
+    gpa_total = 0.0
+
+    for period in period_list:
+        score = view_score(period)
+        gpa = score['gpa']
+
+        if isinstance(gpa, float):
+            gpa_count += 1
+            gpa_total += gpa
+
+    gpa_cumulative = (gpa_total / gpa_count)
+    gpa_cumulative = format(gpa_cumulative, '.2f')
+
+    return gpa_cumulative
 
 
 # ----------------------------- #
@@ -306,10 +306,15 @@ def __calculate_gpa(graded_scores: List[dict], grading_list: List[dict]) -> Unio
         gp_sum += (gp * scu)
         total_scu += scu
 
-    gpa: float = gp_sum / total_scu
-    last_point = int(format(gpa, '.3f')[-1])
+    try:
+        gpa: float = gp_sum / total_scu
+        last_point = int(format(gpa, '.3f')[-1])
 
-    if last_point == 5:
-        gpa += 0.001
+        # in binus, scores get rounded up on 5 and above.
+        # ex: 3.785 --> 3.79
+        if last_point == 5:
+            gpa += 0.001
 
-    return float(format(gpa, '.2f'))
+        return float(format(gpa, '.2f'))
+    except:
+        return 'N/A'

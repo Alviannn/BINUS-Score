@@ -43,6 +43,8 @@ def print_score_map(score_map: Dict[str, Any]):
 
         print()
 
+# ---------------------------------------------------------------------------------------- #
+
 
 def handle_login():
     while True:
@@ -67,8 +69,8 @@ def handle_login():
                     f'{Fore.LIGHTRED_EX}Incorrect username or password! Please check it again!')
             elif ex.code == LoginError.UNKNOWN:
                 print(
-                    f'{Fore.LIGHTRED_EX}An unknown error has occurred that causes the program to fail to login! '
-                    'Please contact the developer!')
+                    f'{Fore.LIGHTRED_EX}An unknown error has occurred that causes the program to fail to login!'
+                    ' Please contact the developer!')
 
             print(Fore.RESET)
             os.system('pause')
@@ -79,14 +81,48 @@ def handle_login():
         break
 
 
+def choose_period(period_list: list[dict]):
+    # user must pick the correct period
+    while True:
+        os.system('cls')
+
+        try:
+            print('Choose which score to view!\n')
+
+            count = 0
+            for period in period_list:
+                count += 1
+                print(f'{count}. {period["field"]} Score')
+
+            count += 1
+            print(f'{count}. Cumulative GPA Score')
+            print()
+
+            choice = int(input(f'Choice: '))
+
+            if choice == count:
+                print(f'Your cumulative GPA: {binmay.get_cumulative_gpa(period_list)}')
+                os.system('pause')
+                continue
+
+            assert 1 <= choice <= len(period_list)
+
+            return period_list[choice - 1]
+        except Exception:
+            print('Invalid choice!')
+            os.system('pause')
+
+
 def handle_view_score():
     while True:
         try:
-            period = binmay.choose_period()
+            period_list = binmay.get_all_periods()
+            period = choose_period(period_list)
+
             score = binmay.view_score(period)
         except SessionError:
-            print(f'{Fore.LIGHTRED_EX}It seems the program no longer have a session in BINUSMaya! '
-                  f'Please relog immediately!{Fore.RESET}')
+            print(f'{Fore.LIGHTRED_EX}It seems the program no longer have a session in BINUSMaya!'
+                  f' Please relog immediately!{Fore.RESET}')
             os.system('pause')
             return
 
